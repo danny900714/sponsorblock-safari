@@ -1,0 +1,54 @@
+name: Release
+run-name: Release ${{ inputs.release-name }} (based on SponsorBlock ${{ inputs.upstream-tag }})
+on:
+  workflow_dispatch:
+    inputs:
+      upstream-tag:
+        description: The tag of the upstream repository to release from
+        required: true
+        type: string
+      release-name:
+        description: The name of the release
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: release-${{ inputs.release-name }}
+
+jobs:
+  build:
+    name: Build
+    runs-on: xcode-27
+
+    permissions:
+      contents: read
+      id-token: write     # for attestations
+      attestations: write # for attestations
+
+    steps:
+      - name: Switch to Xcode 27.2
+        run: sudo xcode-select --switch /Applications/Xcode_27.2.app
+
+      - name: Print the active XCode Command Line Tools version
+        run: xcrun xcodebuild -version
+
+      - name: Download the SponsorBlock release asset
+        run: gh release download "$RELEASE_TAG" -p 'SafariExtension.zip'
+        env:
+          RELEASE_TAG: ${{ inputs.upstream-tag }}
+          GH_REPO: ajayyy/SponsorBlock
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract the Safari extension
+        run: unzip SafariExtension.zip -d SafariExtension
+
+      - name: Create an XCode project for Safari web extension
+        run: xcrun safari-web-extension-packager --bundle-identifier io.github.danny900714.sponsorblock --macos-only --no-open SafariExtension
+
+      - name: List project files
+        run: ls -R 'SponsorBlock for YouTube'
+
+      - name: Print the content of xcproj
+        run: cat 'SponsorBlock for YouTube/SponsorBlock for YouTube.xcodeproj/project.xcproj'
