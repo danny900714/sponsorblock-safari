@@ -180,3 +180,30 @@ jobs:
           generate_release_notes: true
           files: ${{ env.DMG_NAME }}
           fail_on_unmatched_files: true
+
+  bump-homebrew-cask:
+    name: Bump Homebrew cask
+    runs-on: ubuntu-latest
+    needs: github-release
+
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3.3.0
+        with:
+          client-id: ${{ vars.HOMEBREW_CASK_BUMPER_CLIENT_ID }}
+          private-key: ${{ secrets.HOMEBREW_CASK_BUMPER_PRIVATE_KEY }}
+          repositories: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
+          permission-actions: write
+
+      - name: Dispatch bump cask workflow
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
+          CASK: ${{ vars.HOMEBREW_CASK_TOKEN }}
+          VERSION: ${{ inputs.release-name }}
+        run: |
+          output=$(gh workflow run bump-cask.yml -f cask="$CASK" -f version="$VERSION")
+          echo "Workflow run URL: $output"
+          run_id=$(grep -oE 'runs/[0-9]+' <<< "$output" | head -1 | cut -d / -f 2)
+          gh run watch "$run_id" --exit-status
