@@ -1,0 +1,41 @@
+name: Check upstream release
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: 52 * * * * # At minute 46 every hour
+
+permissions: {}
+
+jobs:
+  check-upstream-release:
+    name: Check upstream release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check upstream release
+        id: check-upstream-release
+        uses: danny900714/actions/check-upstream-release@main
+        with:
+          upstream-repository: ajayyy/SponsorBlock
+
+    outputs:
+      new-upstream-version: ${{ steps.check-upstream-release.outputs.new-upstream-version }}
+
+  dispatch-release:
+    name: Dispatch release workflow
+    needs: check-upstream-release
+    if: needs.check-upstream-release.outputs.new-upstream-version != ''
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: write # Dispatch release workflow
+
+    steps:
+      - name: Dispatch release workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          UPSTREAM_TAG: ${{ needs.check-upstream-release.outputs.new-upstream-version }}
+        run: gh workflow run release.yml -f upstream-tag="$UPSTREAM_TAG" -f release-name="${UPSTREAM_TAG}+safari.0"

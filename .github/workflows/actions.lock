@@ -3,6 +3,8 @@
 # Docs: https://gh.io/actions-lockfile
 version: 'v0.0.3'
 workflows:
+    '.github/workflows/check-upstream-release.yml':
+        - 'danny900714/actions@main'
     '.github/workflows/release.yml':
         - 'actions/attest@v4.2.2'
         - 'actions/checkout@v7.0.1'
@@ -42,6 +44,11 @@ dependencies:
         commit: 'sha1-288b8ec97b82c66b6f2a6baaf7acc8dfbcbe331c'
         owner_id: 60242489
         repo_id: 235022350
+    'danny900714/actions@main':
+        ref: 'main'
+        commit: 'sha1-b86c94bc9c45cd7412c973ed35bc127d71a4b2f0'
+        owner_id: 37932792
+        repo_id: 1449205672
     'softprops/action-gh-release@v3.0.4':
         ref: 'v3.0.4'
         commit: 'sha1-8a0cd651e5b2365bd640854a3fa5dfc70e4875f3'
